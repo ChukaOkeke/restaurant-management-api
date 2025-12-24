@@ -1,5 +1,27 @@
 from django.shortcuts import render
+from rest_framework import generics, viewsets
+from rest_framework.decorators import api_view
+from .models import Menu, Booking
+from .serializers import MenuSerializer, BookingSerializer
 
 # Create your views here.
+# Function-based view to render the homepage to the client
 def index(request):
     return render(request, 'index.html', {})
+
+# Class-based view to handle Menu items
+class MenuItemsView(generics.ListCreateAPIView):
+    queryset = Menu.objects.all()  # Fetch all menu items from the database
+    serializer_class = MenuSerializer  # Serialize the menu items
+
+# Class-based view to handle a single Menu item
+class SingleMenuItemView(generics.RetrieveUpdateAPIView, generics.DestroyAPIView):
+    queryset = Menu.objects.all()  # Fetch menu item from the database
+    serializer_class = MenuSerializer  # Serialize the menu item
+
+# Viewset view to handle Bookings
+class BookingViewSet(viewsets.ModelViewSet):
+    queryset = Booking.objects.all()  # Fetch all bookings from the database
+    serializer_class = BookingSerializer  # Serialize the bookings
+    
+            
