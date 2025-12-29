@@ -20,10 +20,12 @@ from rest_framework import routers
 from restaurant import views
 
 router = routers.DefaultRouter()    # Create a router for BookingViewSet
-router.register(r'tables', views.BookingViewSet)    # Register the BookingViewSet with the router
+router.register(r'tables', views.BookingViewSet)    # Register the BookingViewSet with the 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('restaurant/', include('restaurant.urls')), # Include URLs from the restaurant app when this path is accessed
-    path('restaurant/booking/', include(router.urls)),  # Include URLs from the booking router when this path is accessed
+    path('restaurant/booking/', include(router.urls)),  # Include URLs from the table bookings router when this path is accessed
+    path('auth/', include('djoser.urls')),  # Djoser URLs for authentication
+    path('auth/', include('djoser.urls.authtoken')),    # Djoser URLs for token authentication
 ]
