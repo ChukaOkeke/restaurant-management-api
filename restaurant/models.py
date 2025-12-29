@@ -8,7 +8,7 @@ class MenuItem(models.Model):
     inventory = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.title} - {str(self.price)}"
+        return f"{self.title} : {str(self.price)}"
 
 # The Booking model/table for the restaurant application
 class Booking(models.Model):
@@ -17,4 +17,4 @@ class Booking(models.Model):
     booking_date = models.DateTimeField()
 
     def __str__(self):
-        return f"{self.name} - {self.booking_date}"
+        return f"{self.name} : {self.booking_date}"
