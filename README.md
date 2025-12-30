@@ -84,6 +84,10 @@ The API supports the following endpoints for managing menu items and table booki
 | `GET` | `/api/booking/tables/` | View all active bookings | Authenticated |
 | `POST` | `/api/booking/tables/` | Create a new table reservation | Authenticated |
 | `DELETE` | `/api/booking/tables/<id>/` | Cancel a reservation | Owner/Staff |
+| `GET` | `/auth/users/` | List all registered users | Admin Only |
+| `POST` | `/auth/users/` | Register a new user | Public |
+| `POST` | `/auth/token/login` | Generate an auth token for session access | Public |
+| `POST` | `/auth/users/logout` | Logout the user | Public |
 
 **1. Requirement Analysis**  
  **Problem Statement**: Independent restaurants often struggle with fragmented data between front-of-house orders and back-of-house inventory.  
