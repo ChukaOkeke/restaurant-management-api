@@ -1,73 +1,56 @@
 **Restaurant Management API (AsgardCuisines)**  
-A robust RESTful API for modern restaurant management, built with Django and MySQL.
+A secure, containerized RESTful API for modern restaurant management, built with Django, MySQL, and Docker.
 
 **Installation & Setup**  
-Follow these steps to get the Restaurant Management API running on your local machine.
+Follow these steps to get the AsgardCuisines API running using Docker.
 
  1. Prerequisites
-  - Python 3.12+
-  - MySQL Server
+  - Docker Desktop (or Docker Engine on Linux)
   - Git
 
  2. Clone the Repository
 
 ```bash  
-git clone https://github.com/ChukaOkeke/restaurant-management-api.git
-cd restaurant-management-api  
+git clone https://github.com/ChukaOkeke/restaurant-api-docker.git
+cd restaurant-api-docker  
 ```
 
- 3. Set up Virtual Environment  
- It is recommended to use a virtual environment to manage dependencies
-
- ```bash
- # Create venv
- python3 -m venv venv
-
- # Activate venv (Linux)
- source venv/bin/activate
- ```
-
- 4. Install Dependencies  
- Ensure your virtual environment is active before running this:
-
- ```bash
- pip install -r requirements.txt
- ```
-
- 5. Environment Configuration  
- The project uses python-dotenv to manage sensitive information.  
-
+ 3. Environment Configuration  
+ The project uses a .env file to manage sensitive database credentials  
   - Copy the template file:
+```bash  
+cp .env.example .env
+```
+
+  - Open .env and verify the settings:  
+     DB_NAME=restaurant_db  
+     DB_USER=asgard_admin  
+     DB_PASSWORD=your_secure_password  
+     MYSQL_ROOT_PASSWORD=your_super_secret_root_password  
+
+ 4. Launch the infrastructure  
+ Build the custom API image and start the MySQL database in the background. 
 
  ```bash
- cp .env.example .env
- ```
-  - Open .env and fill in your specific details:  
-    SECRET_KEY: Your Django secret key.  
-    DB_NAME: AsgardCuisines  
-    DB_USER: Your MySQL username (usually root).  
-    DB_PASSWORD: Your MySQL password.
-
- 6. Database Initialization  
- Before running migrations, create the database in your MySQL terminal:
-
- ```sql
- CREATE DATABASE AsgardCuisines;
+ docker compose up -d --build
  ```
 
- Now apply the migrations to set up your tables:
+  Note: On the first run, the database initialization on WSL2 may take 3-5 minutes. The API service is configured to wait until the database is officially healthy before starting.  
+  If the API service does not start alongside the database service, run:
+ 
+ ```bash
+ docker compose restart web
+ ```
+
+ 5. Apply Database Migrations  
+ Once the containers are running and healthy, create the necessary database tables:
 
  ```bash
- python3 manage.py migrate
+ docker compose exec web python manage.py migrate
  ```
 
- 7. Run the Application
-
- ```bash
- python3 manage.py runserver
- ```
-
- The API will be available at http://127.0.0.1:8000/.
+ 6. Access the Application  
+ The API will be available at http://127.0.0.1:8000/ or http://localhost:8000/.
 
 **API Endpoints**  
 The API supports the following endpoints for managing menu items and table bookings.
@@ -126,7 +109,7 @@ The API supports the following endpoints for managing menu items and table booki
   - Execution:
 
  ```bash
- python3 manage.py test
+ pip install -r requirements-dev.txt && python3 manage.py test
  ```
 
 **5. Security**  
@@ -136,7 +119,7 @@ The API supports the following endpoints for managing menu items and table booki
   Run Audit:
 
  ```bash
- bandit -c pyproject.toml -r .
+ pip install -r requirements-dev.txt && bandit -c pyproject.toml -r .
  ```
 Bandit results:  
 ![Bandit results](./assets/bandit-result.png)
@@ -152,9 +135,15 @@ Bandit results:
    Requirement of Authorization Header: Every sensitive request requires a valid Authorization: Token <key> header, which must be manually included by the client application.
  - Secure Environment Management: Sensitive keys (Database passwords, Django SECRET_KEY) are never stored in the source code. They are managed via .env files and excluded from version control using .gitignore.
 
+**6. Containerization**  
+Docker/Docker Compose was used for the single-host multi-environment containerization (Django API in one container, MySQL database in another) and orchestration. The official MySQL image was pulled from DockerHub, and the API image was subsequently built successfully.  
+I encountered a timing and networking issue during the multi-container orchestration using Docker Compose. MySQL 8.0 on WSL2 takes some time (~ 3 mins) to initialize its internal system files on first run. So, the database service kept being declared 'unhealthy' by Docker, and refused to start and establish connection with the API service. To resolve this, I added a 'healthcheck' attribute for the database service in the compose.yaml file
+
 **Tech Stack**
- - Language: **Python**
- - Framework: **Django / Django REST Framework**
+ - Backend: **Python / Django**
  - Database: **MySQL** 
- - Security Tools: **Bandit, JWT**
+ - Containerization: **Docker / Docker Compose**
+ - Security: **Bandit / JWT**
+ - API Tools: **Insomnia**
+
 
