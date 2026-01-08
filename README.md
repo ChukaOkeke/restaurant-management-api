@@ -73,8 +73,10 @@ The API supports the following endpoints for managing menu items and table booki
 | `POST` | `/auth/users/logout` | Logout the user | Public |
 
 **1. Requirements Analysis**  
- **Problem Statement**: Independent restaurants often struggle with fragmented data between front-of-house orders and back-of-house inventory.  
- **Solution**: This API centralizes the restaurant lifecycle -- from menu management to secure customer table reservations.  
+ **Problem Statement**: Independent restaurants often struggle with fragmented data between front-of-house orders and back-of-house inventory. Also, it is common for applications to work well on a developer's laptop but end up malfunctioning during production.  
+
+ **Solution**: This API handles two core restaurant functions -- menu management and customer table reservations. Also, the application and its dependencies are packaged into small isolated units that run reliably and consistently in every environment from development to testing and then production.  
+
   **Core Features**:
    - Role-based Access (Manager vs. Customer)
    - Menu management
