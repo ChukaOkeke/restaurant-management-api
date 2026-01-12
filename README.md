@@ -1,6 +1,9 @@
 **Restaurant Management API (AsgardCuisines)**  
 A secure, containerized RESTful API for modern restaurant management, built with Django, MySQL, and Docker. This is version 1 of a continuously evolving cloud-native system. 
 
+**Project Scope**  
+This project focuses on secure containerization and local orchestration using Docker Compose. Cloud-native services (EKS, IAM, Secrets Manager) are explored in later iterations.
+
 **Installation & Setup**  
 Follow these steps to get the AsgardCuisines API running using Docker.
 
@@ -72,39 +75,75 @@ The API supports the following endpoints for managing menu items and table booki
 | `POST` | `/auth/token/login` | Generate an auth token for session access | Public |
 | `POST` | `/auth/users/logout` | Logout the user | Public |
 
-**1. Requirements Analysis**  
- **Problem Statement**: Independent restaurants often struggle with fragmented data between front-of-house orders and back-of-house inventory. Also, it is common for applications to work well on a developer's laptop but end up malfunctioning during production.  
+**1. Problem & Constraints**  
+ **Problem Statement**  
+ The goal was to design a secure, scalable backend API for restaurant bookings and menu management that could evolve from Docker Compose to Kubernetes and later to cloud-native services.  
 
- **Solution**: This API handles two core restaurant functions -- menu management and customer table reservations. Also, the application and its dependencies are packaged into small isolated units that run reliably and consistently in every environment from development to testing and then production.  
+ **Constraints**  
+ - Cost-efficient local development
+ - Secure handling of secrets
+ - Container portability
+ - Clear seperation of services  
 
-  **Core Features**:
-   - Role-based Access (Manager vs. Customer)
-   - Menu management
-   - Order booking
 
-**2. Design & Architecture**  
- **High-Level System Architecture**  
+**2. Architecture Overview**  
+ **Diagram**  
+ - **System Architecture**   
 
  ![System Architecture](./assets/architecture-diagram.png)  
  
- AsgardCuisines utilizes a decoupled architecture to ensure independent scalability of the data and application layers
- - Frontend: Interacts with the backend via RESTful endpoints.
- - Application Layer: Managed by Django, handling business logic and request routing.
- - Data Persistence: A MySQL instance ensures ACID-compliant transactions for all menu and booking data.
- - Communication: The Client interacts with the Django application via stateless HTTPS requests, exchanging data in JSON format to ensure compatibility with modern frontend frameworks.
- - Abstraction: The Django ORM is utilized to abstract complex MySQL queries into Pythonic code, ensuring rapid development without sacrificing the data integrity of a relational database.
-
- **Database Schema (ERD)**  
+ - **Database Schema (ERD)**
 
  ![AsgardCuisines ERD](./assets/database-erd.png)
-   - Key Entities: MenuItem, Booking.
 
-**3. Implementation**  
+ Key Entities: MenuItem, Booking.
+
+ - **Containerization**
+
+ ![Multi-container](./assets/container.png)
+
+ **Component responsibilities**  
+AsgardCuisines utilizes a decoupled architecture to ensure independent scalability of the data and application layers
+ - Frontend: Interacts with the backend via RESTful endpoints.
+ - Application Layer: Managed by Django, handling business logic and request routing.
+ - Database layer: A MySQL instance ensures ACID-compliant transactions for all menu and booking data.
+ - Communication: The Client interacts with the Django API via stateless HTTPS requests, exchanging data in JSON format to ensure compatibility with modern frontend frameworks. The API interacts with the Database using Django ORM. Also, a bridge network in the host enables communication between the API and database services in the multi-containers.
+
+ **Trust boundaries**  
+ **Trust Boundary 1: Client -> API (Public Network)**  
+ - All incoming HTTP requests originate from untrusted clients.
+ - Requests are validated at the API layer using schema validation and authentication tokens.
+ - Only authenticated requests are allowed to access protected endpoints.
+
+**Trust Boundary 2: API Service -> Database**
+- The database is not exposed to the public network.
+- The API is the only trusted component allowed to communicate with the database.
+- Database credentials are injected via environment variables and not hardcoded.
+
+**Trust Boundary 3: Docker Network (Inter-service Communication)**
+- Services communicate over an isolated Docker bridge network.
+- No service is directly exposed unless explicitly mapped via ports.
+- Internal service names are used instead of IP addresses.
+
+**Trust Boundary 4: Secrets Handling**  
+- Sensitive configuration values (DB credentials, secret keys) are managed via environment variables.
+- Secrets are never committed to secure control.
+- Access to secrets is limited to the application container.
+
+
+**3. Key Design Decisions & Trade-offs**
+- Chose Django for its robustness and security as a python-based web framework
+- Chose MySQL for its ACID compliance, ensuring that order transactions are never lost or duplicated.
+- Chose Docker Compose over Kubernetes for local dev to reduce operational overhead.
+- Used environment variables instead of hardcoded secrets to prepare for cloud secret managers.
+- Deferred Redis caching to avoid premature optimization.  
+
+   
+**4. Implementation**  
  This phase focused on building a modular, scalable codebase.
-  - Technology Choice: Chose Django for its robustness and security as a python-based web framework. Chose MySQL for its ACID compliance, ensuring that order transactions are never lost or duplicated.
   - Logic Highlights: Used Django Rest Framework (DRF) to create APIs for Menu and Booking. Used DRF's djoser library to easily implement token authentication for user registration, login, and logout.
 
-**4. Testing & Quality Assurance**  
+**5. Testing & Quality Assurance**  
  Quality was ensured through a comprehensive testing suite:
   - Unit Tests: Validating individual model methods, views, and serializers.
   - Integration Tests: End-to-end testing of API endpoints using the Insomnia REST client. 
@@ -114,11 +153,11 @@ The API supports the following endpoints for managing menu items and table booki
  pip install -r requirements-dev.txt && python3 manage.py test
  ```
 
-**5. Security**  
+**6. Security**  
  Security was integrated into the development pipeline at several layers rather than added as an afterthought to protect against common web vulnerabilities:
- - Authentication & Authorization: Secured via **JWT (JSON Web Tokens)** for stateless, scalable session management. Used granular permissions to ensure only authorized users can interact with the table booking API. 
- - **Static Application Security Testing (SAST)**: Audited using Bandit to identify common Python security vulnerabilities (e.g., SQL injection risks, weak cryptography).  
-  Run Audit:
+ - Used **JWT (JSON Web Tokens)** for user authentication and authorization.
+ - Used Bandit for **Static Application Security Testing (SAST)**.  
+ Run Audit:
 
  ```bash
  pip install -r requirements-dev.txt && bandit -c pyproject.toml -r .
@@ -126,20 +165,12 @@ The API supports the following endpoints for managing menu items and table booki
 Bandit results:  
 ![Bandit results](./assets/bandit-result.png)
 
- - Protection Against SQL Injection:  
-   Django ORM: We avoid writing raw SQL queries. By using Django's Object-Relational Mapper (ORM), all input is automatically parameterized.  
-   Input Validation: All data entering the API is validated through Django Rest Framework Serializers, ensuring only the expected data types (integers for prices, strings for names) reach the database.
- - Cross-Site Scripting (XSS) Defense:  
-   Automatic Escaping: Django's template engine (used for the home page) automatically escapes HTML-sensitive characters like < and >, preventing malicious scripts from being executed in the browser.  
-   Content Type Enforcement: The API strictly communicates via application/json. Browsers do not execute JSON as HTML/JavaScript, which significantly reduces the XSS attack surface.
- - Cross-Site Request Forgery (CSRF) Defense:  
-   Token-Based Authentication: Because this API uses Token Authentication rather than cookies/sessions, it is inherently resistant to CSRF attacks. Since the browser does not automatically send the token (unlike a cookie), an attacker cannot trick a user's browser into making an unauthorized request to our API.  
-   Requirement of Authorization Header: Every sensitive request requires a valid Authorization: Token <key> header, which must be manually included by the client application.
- - Secure Environment Management: Sensitive keys (Database passwords, Django SECRET_KEY) are never stored in the source code. They are managed via .env files and excluded from version control using .gitignore.
+ - Focused on defenses against SQL injection, Cross-Site Scripting (XSS), and Cross-Site Request Forgery (CSRF).
 
-**6. Containerization**  
-Docker/Docker Compose was used for the single-host multi-environment containerization (Django API in one container, MySQL database in another) and orchestration. The official MySQL image was pulled from DockerHub, and the API image was subsequently built successfully.  
-I encountered a timing and networking issue during the multi-container orchestration using Docker Compose. MySQL 8.0 on WSL2 takes some time (~ 3 mins) to initialize its internal system files on first run. So, the database service kept being declared 'unhealthy' by Docker, and refused to start and establish connection with the API service. To resolve this, I added a 'healthcheck' attribute for the database service in the compose.yaml file
+ - Used environment variables to handle secrets (like database credentials) instead of hardcoding.
+
+**7. Containerization**  
+Docker/Docker Compose was used for the multi-environment containerization (Django API in one container, MySQL database in another) and local  orchestration.
 
 **Tech Stack**
  - Backend: **Python / Django**
@@ -148,4 +179,7 @@ I encountered a timing and networking issue during the multi-container orchestra
  - Security: **Bandit / JWT**
  - API Tools: **Insomnia**
 
+**Deep Dive**  
+This repository focuses on implementation, containerization, and local orchestration of the Restaurant Management API using Docker and Docker Compose.  
+A detailed breakdown of the architectural decisions, design trade-offs, security boundaries, and lessons learned during the containerization process is documented here on [Designing a Secure Dockerized Restaurant Management API](https://medium.com/@chukaokeke/designing-a-secure-dockerized-restaurant-management-api-e3cadebf9635)
 
