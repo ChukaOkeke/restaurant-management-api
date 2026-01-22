@@ -1,4 +1,4 @@
-# Using a slim version of Python to keep the image small
+# Using a slim version of the Python base image to keep the image small
 FROM python:3.12-slim
 
 # Set environment variables to optimize Python for Docker
