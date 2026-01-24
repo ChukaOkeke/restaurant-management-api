@@ -38,7 +38,7 @@ services:
       start_period: 180s
 
   web:
-    build: chukaokeke/restaurant-api:v1 # Pull custom Django image from Docker Hub
+    image: chukaokeke/restaurant-api:v2 # Pull custom Django image from Docker Hub
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app

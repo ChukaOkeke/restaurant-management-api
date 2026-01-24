@@ -32,10 +32,10 @@ cp .env.example .env
      MYSQL_ROOT_PASSWORD=your_super_secret_root_password  
 
  4. Launch the infrastructure  
- Build the custom API image and start the MySQL database in the background. 
+ Pull the official MySQL and custom API images and start the system in the background. 
 
  ```bash
- docker compose up -d --build
+ docker-compose up -d
  ```
 
   Note: On the first run, the database initialization on WSL2 may take 3-5 minutes. The API service is configured to wait until the database is officially healthy before starting.  
@@ -156,7 +156,7 @@ AsgardCuisines utilizes a decoupled architecture to ensure independent scalabili
 **6. Security**  
  Security was integrated into the development pipeline at several layers rather than added as an afterthought to protect against common web vulnerabilities:
  - Used **JWT (JSON Web Tokens)** for user authentication and authorization.
- - Used Bandit for **Static Application Security Testing (SAST)**.  
+ - Used Bandit for **Static Application Security Testing (SAST)**.    
  Run Audit:
 
  ```bash
@@ -169,6 +169,23 @@ Bandit results:
 
  - Used environment variables to handle secrets (like database credentials) instead of hardcoding.
 
+ - Used Trivy for container scanning.  
+
+ Run Audit:
+
+ ```bash
+ pip install -r requirements-dev.txt && trivy image chukaokeke/restaurant-api:v2
+ ```
+
+Run audit for available patches:
+
+ ```bash
+ trivy image --ignore-unfixed chukaokeke/restaurant-api:v2
+ ```
+
+Trivy results:  
+![Bandit results](./assets/trivy-result.png)
+
 **7. Containerization**  
 Docker/Docker Compose was used for the multi-environment containerization (Django API in one container, MySQL database in another) and local  orchestration.
 
@@ -176,7 +193,7 @@ Docker/Docker Compose was used for the multi-environment containerization (Djang
  - Backend: **Python / Django**
  - Database: **MySQL** 
  - Containerization: **Docker / Docker Compose**
- - Security: **Bandit / JWT**
+ - Security: **Bandit / JWT / Trivy**
  - API Tools: **Insomnia**
 
 **Deep Dive**  
